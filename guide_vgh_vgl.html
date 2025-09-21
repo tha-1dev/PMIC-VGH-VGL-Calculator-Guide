@@ -24,15 +24,6 @@ th{color:var(--accent);background:#0f141b;position:sticky;top:0}
 .btn{display:inline-block;background:#0f1f26;border:1px solid #2a4c5c;color:#a5f1ff;padding:8px 12px;border-radius:10px;text-decoration:none}
 .warn{background:#1a1707;border:1px solid #4d3f0b;color:#ffd166;padding:10px 12px;border-radius:12px}
 </style>
-<script type="importmap">
-{
-  "imports": {
-    "path": "https://aistudiocdn.com/path@^0.12.7",
-    "vite": "https://aistudiocdn.com/vite@^7.1.6",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0"
-  }
-}
-</script>
 </head>
 <body>
 <header>
@@ -139,9 +130,9 @@ th{color:var(--accent);background:#0f141b;position:sticky;top:0}
 <section class="card">
   <h2>รูปประกอบการทำงาน</h2>
   <div class="grid cols-3">
-    <figure class="figure"><img src="./assets/lg_pinout.jpg" alt="I2C wiring"><figcaption class="figcap">ตัวอย่างการเชื่อมต่อ I2C (LG TCON/PMIC)</figcaption></figure>
-    <figure class="figure"><img src="./assets/ss_pinout.jpg" alt="ISP/SPI"><figcaption class="figcap">ต่อ ISP / SPI Flash T‑CON</figcaption></figure>
-    <figure class="figure"><img src="./assets/000003.jpg" alt="Measure"><figcaption class="figcap">การวัดไฟ VGH/VGL จริง</figcaption></figure>
+    <figure class="figure"><img src="./docs/img/547670486_650026501497546_5253015017365243797_n.jpg" alt="I2C wiring"><figcaption class="figcap">ตัวอย่างการเชื่อมต่อ I2C (LG TCON/PMIC)</figcaption></figure>
+    <figure class="figure"><img src="./docs/img/551344332_1245845253977246_2084376478100254257_n.jpg" alt="ISP/SPI"><figcaption class="figcap">ต่อ ISP / SPI Flash T‑CON</figcaption></figure>
+    <figure class="figure"><img src="./docs/img/550723606_1286833842728300_3227053080318191235_n.jpg" alt="Measure"><figcaption class="figcap">การวัดไฟ VGH/VGL จริง</figcaption></figure>
   </div>
 </section>
 
@@ -162,63 +153,6 @@ th{color:var(--accent);background:#0f141b;position:sticky;top:0}
   <span class="badge">Powered by Thai‑Dev</span>
   <a class="btn" href="./index.html">กลับหน้าแอพหลัก</a>
 </footer>
-
-
-<section class="card">
-  <h2>ภาพประกอบ / Examples</h2>
-  <div class="grid cols-3">
-    <figure class="figure"><img src="./assets/000003.jpg" alt="Measure meters"><figcaption class="figcap">วัด VGH/VGL จริง</figcaption></figure>
-    <figure class="figure"><img src="./assets/ss_pinout.jpg" alt="ISP/SPI"><figcaption class="figcap">PMIC ISP / SPI Flash</figcaption></figure>
-    <figure class="figure"><img src="./assets/00002.jpg" alt="Buffer"><figcaption class="figcap">อ่านค่า Hex ใน Buffer Editor</figcaption></figure>
-  </div>
-  <div class="grid cols-1" style="margin-top:10px">
-    <figure class="figure"><img src="./assets/vghvglhex.jpg" alt="Hex Volt Chart"><figcaption class="figcap">กราฟเทียบ Register ↔ Voltage</figcaption></figure>
-  </div>
-</section>
-
-<section class="card" id="support-contact">
-  <h2>🚀 เข้าร่วมกลุ่มสนับสนุน &amp; รับสิทธิ์พิเศษ (จำนวนจำกัด)</h2>
-  <p>ปลดล็อกสิทธิประโยชน์ตลอดชีพเพื่อยกระดับงานซ่อมของคุณ:</p>
-  <ul>
-    <li>🔥 สิทธิ์ <strong>ตลอดชีพ</strong> ไม่มีรายเดือน</li>
-    <li>🔥 ซัพพอร์ต-ปรึกษาส่วนตัว 1:1 รายปี</li>
-    <li>🔥 อัปเดตเทคนิค &amp; แอปพลิเคชันใหม่ก่อนใคร</li>
-  </ul>
-  <div class="ok"><strong>สนับสนุนเพียงครั้งเดียว คุ้มเกินราคา!</strong> แค่ซ่อมจอทีวีได้ 1 ครั้ง ก็คุ้มทุนแล้ว ที่เหลือคือกำไรความรู้แบบจัดเต็ม</div>
-
-  <h3>💳 ช่องทางสนับสนุน</h3>
-  <table>
-    <tr>
-      <th>ธนาคาร/บริการ</th>
-      <th>เลขที่บัญชี/เบอร์</th>
-      <th>ชื่อบัญชี</th>
-    </tr>
-    <tr>
-      <td>SCB</td>
-      <td>423-182-2766</td>
-      <td>นาย ธนากร ชูไว</td>
-    </tr>
-    <tr>
-      <td>KBank</td>
-      <td>095-821-4391</td>
-      <td>(PromptPay)</td>
-    </tr>
-    <tr>
-      <td>PromptPay</td>
-      <td>092-968-6484</td>
-      <td>(PromptPay)</td>
-    </tr>
-  </table>
-
-  <h3>📩 ขั้นตอนการเข้าร่วม</h3>
-  <ol>
-    <li>โอนเงินสนับสนุนผ่านช่องทางด้านบน</li>
-    <li>ส่งสลิปพร้อมเบอร์โทรศัพท์ของคุณมาที่ Facebook Messenger</li>
-    <li><a href="https://m.me/Tha1dev" target="_blank" rel="noopener noreferrer" class="btn primary">ส่งสลิปที่นี่ (m.me/Tha1dev)</a> เพื่อรับสิทธิ์เข้ากลุ่มทันที</li>
-  </ol>
-  <p class="calc-footer" style="text-align:right; opacity:1;">✨ Powered by <strong>Thai-Dev Advanced</strong></p>
-</section>
-
 
 </main>
 </body>

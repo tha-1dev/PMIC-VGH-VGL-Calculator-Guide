@@ -1,0 +1,190 @@
+{
+  "info": {
+    "name": "Thai-Dev Voltages API",
+    "_postman_id": "thai-dev-volts-20250921093017",
+    "description": "Postman collection สำหรับทดสอบ API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Telemetry CSV",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/v1/telemetry.csv?key={{apiKey}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "telemetry.csv"
+          ],
+          "query": [
+            {
+              "key": "key",
+              "value": "{{apiKey}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Voltage → Hex",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/convert/voltage-to-hex",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "convert",
+            "voltage-to-hex"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"param\":\"VGH\",\"voltage\":29.8,\"bytes\":1,\"scale\":1.0,\"offset\":0.0}"
+        }
+      }
+    },
+    {
+      "name": "By Panel: Hex → Voltage",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/convert/panel/hex-to-voltage",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "convert",
+            "panel",
+            "hex-to-voltage"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"panel_id\":\"SAMSUNG_SW5084A\",\"param\":\"VGH\",\"hex_value\":\"0x96\"}"
+        }
+      }
+    },
+    {
+      "name": "By Panel: Voltage → Hex",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/convert/panel/voltage-to-hex",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "convert",
+            "panel",
+            "voltage-to-hex"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"panel_id\":\"LG_GENERIC\",\"param\":\"VGL\",\"voltage\":-10}"
+        }
+      }
+    },
+    {
+      "name": "Panel Calibration (2-point)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/panels/calibrate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "panels",
+            "calibrate"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"panel_id\":\"SAMSUNG_SW5084A\",\"param\":\"VGH\",\"p1\":{\"raw\":99,\"voltage\":20},\"p2\":{\"raw\":150,\"voltage\":29.8},\"save\":false}"
+        }
+      }
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "apiKey",
+      "value": "changeme"
+    }
+  ]
+}

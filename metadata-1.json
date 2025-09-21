@@ -1,0 +1,5 @@
+{
+  "name": "PMIC VGH/VGL Calculator & Guide",
+  "description": "An in-depth guide and interactive calculator for TV technicians working with PMIC VGH/VGL voltages. Includes Hex/Dec to Voltage conversion, linear calibration, and LUT support.",
+  "requestFramePermissions": []
+}
