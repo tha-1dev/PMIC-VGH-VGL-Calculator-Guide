@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>คู่มือซ่อม PMIC & เครื่องคำนวณ VGH/VGL — Powered by Thai‑Dev</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0"
+  }
+}
+</script>
+</head>
+<body>
+<header>
+  <h1>คู่มือซ่อม PMIC & เครื่องคำนวณ VGH/VGL</h1>
+  <p>ไกด์ภาพ Step-by-Step • แปลงค่า Hex/Dec • เทคนิคแก้ปัญหาหน้างาน | <span class="muted">Powered by Thai‑Dev</span></p>
+</header>
+<main>
+
+<section class="card">
+  <div class="grid cols-2">
+    <div>
+      <h2>สรุปเร็ว (TL;DR)</h2>
+      <ul>
+        <li><b>VGH</b> = Gate High (+) เปิด TFT; ค่าใช้งานทั่วไป 26–36&nbsp;V, เวิร์กจริงมักตั้ง <b>21–24&nbsp;V</b> เพื่อบาลานซ์สว่าง/อายุ</li>
+        <li><b>VGL</b> = Gate Low (−) ปิด TFT; สเปกพื้นฐาน −5 ถึง −8&nbsp;V แต่ <b>งานซ่อมหน้างานนิยม −12 ถึง −18&nbsp;V</b> เพื่อลดเส้นแนวนอนสว่าง</li>
+        <li>หลังซ่อม/รีบอนด์ COF ให้ <b>ลด VGH</b> เพื่อความสว่างสม่ำเสมอ และ <b>เพิ่มความเป็นลบของ VGL</b> เพื่อลดเส้น</li>
+        <li>ค่าคอนฟิกเก็บเป็น <span class="kbd">Hex</span> ใน PMIC/EEPROM (I2C/SPI). <b>แปลง Hex→Dec→แรงดัน</b> ด้วยสเกล/ออฟเซ็ตของรุ่นนั้น ๆ</li>
+      </ul>
+    </div>
+    <div>
+      <h2>ตารางอ้างอิงเร็ว</h2>
+      <table>
+        <tr><th>รายการ</th><th>ช่วงแนะนำ</th><th>หมายเหตุ</th></tr>
+        <tr><td>VGH</td><td>21–24 V</td><td>ลด wear ของ TFT/COF</td></tr>
+        <tr><td>VGL</td><td>−12 ถึง −18 V</td><td>ลด bright horizontal lines</td></tr>
+        <tr><td>VCOM</td><td>ระบุโดยพาแนล</td><td>มีผลต่อโทน/รีเทนชัน</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="card" id="visual-guide">
+  <h2>Step-by-Step Visual Guide</h2>
+  <p style="text-align: center;"><span class="badge safe">Safe VGH: 26–36V</span> <span class="badge warn">Safe VGL: −18 ถึง −5V</span> <span class="badge danger">Caution: Out of range affects COF</span></p>
+
+  <div class="step">
+    <h3>สำรวจจุดต่อ I2C/ISP</h3>
+    <div class="grid cols-2">
+      <div>
+        <img src="https://placehold.co/600x400/12151a/9bb1c9?text=TCON/PMIC+I2C+Pins" alt="LG TCON/PMIC I2C">
+        <div class="caption">ระบุขา <b>SDA (RX)</b> และ <b>SCL (TX)</b> บน TCON/PMIC เพื่ออ่าน‑เขียนรีจิสเตอร์</div>
+      </div>
+      <div>
+        <img src="https://placehold.co/600x400/12151a/9bb1c9?text=ISP+Wiring+Example" alt="ISP wiring">
+        <div class="caption">ตัวอย่างสาย ISP เข้าบอร์ดจริง: ตรวจ <b>GND</b> ร่วมและแยก ground loop</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3>อ่าน/สำรอง Firmware</h3>
+    <div class="grid cols-2">
+      <div>
+        <img src="https://placehold.co/600x400/12151a/9bb1c9?text=RT809F+Reading+Firmware" alt="Read PMIC Firmware">
+        <div class="caption">ซอฟต์แวร์ RT809F อ่านค่าเฟิร์มแวร์ PMIC (เช่น VGH=0x96, VGL=0x31)</div>
+      </div>
+      <div>
+        <img src="https://placehold.co/600x400/12151a/9bb1c9?text=ISP+and+SPI+Flash+Pinout" alt="Flash & ISP pins">
+        <div class="caption">ผังขา ISP Connector และ SPI Flash สำหรับ TCON</div>
+      </div>
+    </div>
+    <p>บันทึกไฟล์ต้นฉบับ (<code>.bin</code>) ไว้ก่อนปรับทุกครั้ง.</p>
+  </div>
+  
+  <div class="step">
+    <h3>คำนวณ Hex ↔ Voltage และช่วงปลอดภัย</h3>
+    <div class="grid cols-2">
+      <div>
+        <img src="https://placehold.co/600x400/12151a/9bb1c9?text=VGH+vs+Register+Value" alt="VGH vs Register">
+        <div class="caption">ความสัมพันธ์ <b>VGH</b> vs Register (ตัวอย่าง 0x96 ≈ 29.8V)</div>
+      </div>
+      <div>
+        <img src="https://placehold.co/600x400/12151a/9bb1c9?text=PMIC+Safety+Guide" alt="PMIC doc cover">
+        <div class="caption">คู่มือสรุปแนวทางปรับค่า พร้อมป้ายเตือน Safe/Danger</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <h3>อัปเดตค่าและทดสอบ</h3>
+    <p>ใช้เครื่องมือคำนวณด้านล่างเพื่อหาค่า Hex ใหม่ แล้วเขียนกลับด้วย RT809F/VPMS2SM และวัดค่า VGH/VGL จริงเพื่อยืนยัน</p>
+  </div>
+
+</section>
+
+
+<section class="card" id="csv-visualizer">
+  <h2>CSV Data Visualizer</h2>
+  <p class="muted">อัปโหลดไฟล์ CSV เพื่อแสดงผลข้อมูลแรงดันไฟเป็นกราฟเส้น</p>
+  <div class="controls">
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none;" aria-hidden="true">
+    <label for="csvFileInput" class="btn primary">เลือกไฟล์ CSV</label>
+    <p id="csvStatus" class="hint">โปรดเลือกไฟล์ CSV ที่มีคอลัมน์: timestamp, vgh, vgl, vcom</p>
+  </div>
+  <div id="chartContainer" style="position: relative; height:40vh; width:100%; margin-top: 20px; display: none;">
+    <canvas id="voltageChart"></canvas>
+  </div>
+  <div id="gemini-analysis-container" style="display: none; margin-top: 24px;">
+    <h3>Gemini AI Analysis</h3>
+    <p class="muted">ให้ Gemini ช่วยวิเคราะห์ข้อมูลแรงดันไฟและให้คำแนะนำในการซ่อม</p>
+    <button class="btn primary" id="analyzeBtn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M12 3V1.5M12 22.5V21M3 12H1.5M22.5 12H21M5.625 5.625 4.5 4.5M19.5 19.5l-1.125-1.125M5.625 18.375 4.5 19.5M19.5 4.5l-1.125 1.125"></path><path d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9z"></path></svg>
+      วิเคราะห์ด้วย Gemini
+    </button>
+    <div id="geminiOutput" class="out" role="status" aria-live="polite" style="margin-top: 16px;"></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>1) บทนำ & หน้าที่ของ VGH/VGL</h2>
+  <ul>
+    <li><b>VGH</b> (Gate High): ดันเกตของ TFT ให้อยู่สถานะ <i>ON</i> ระหว่างสแกนเส้น; ยิ่งสูงภาพยิ่งสว่าง/คอนทราสต์ดี แต่เสื่อมเร็ว</li>
+    <li><b>VGL</b> (Gate Low): ดึงเกตให้ <i>OFF</i>; ยิ่งลบมากจะปิดสนิท ลด leakage/เส้นขาว แต่ถ้าลบเกินไปจะเกิดอาการมืด/ขอบเพี้ยน</li>
+    <li>Rails ทั้งสองมักมาจาก PMIC ของ T‑CON/เมนบอร์ด: Charge pump/Boost/Invert พร้อม LDO/สวิตช์คุมลำดับ</li>
+  </ul>
+  <div class="ok"><b>หลักคิด:</b> <u>บาลานซ์</u> ระหว่างคุณภาพภาพ (brightness/line artifacts) กับ <u>อายุพาแนล</u>.</div>
+</section>
+
+<section class="card">
+  <h2>2) ช่วงค่าแรงดัน & ผลกระทบ</h2>
+  <div class="grid cols-2">
+    <div>
+      <h3>VGH</h3>
+      <ul>
+        <li><span class="tag">สเปกทั่วไป</span> 26–36 V</li>
+        <li><span class="tag">การใช้งานจริง</span> 21–24 V (หลังซ่อม/พาแนลเก่า)</li>
+        <li>สูงเกินไป → สว่างดี/เส้นลด แต่เร่ง aging ของ COF/TFT</li>
+        <li>ต่ำเกิน → มัว/เปิดไม่สุด, กรณีจอแบ่งซ้าย‑ขวา ให้ลดเพื่อให้สองฝั่งใกล้กัน</li>
+      </ul>
+    </div>
+    <div>
+      <h3>VGL</h3>
+      <ul>
+        <li><span class="tag">สเปกพื้นฐาน</span> −5…−8 V</li>
+        <li><span class="tag">งานซ่อม</span> −12…−18 V (ลด bright lines)</li>
+        <li>ลบน้อยไป → เส้นแนวนอนสว่าง/เปิดค้างบางจุด</li>
+        <li>ลบมากไป → มืด ขอบดำหนัก, เกิด image sticking ง่ายขึ้น</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>3) การวัด & จุดตรวจ</h2>
+  <ul>
+    <li>วัดที่จุดทดสอบบน T‑CON/PMIC: <span class="kbd">VGH</span>, <span class="kbd">VGL</span>, <span class="kbd">AVDD</span>, <span class="kbd">VCOM</span>, <span class="kbd">VDD</span></li>
+    <li>ตรวจ ripple ด้วยออสซิลโลสโคป (AC coupling, BW limit 20&nbsp;MHz) — ripple &lt; ~50–100&nbsp;mVpp มักยอมรับได้</li>
+    <li>เช็ค ESR/ความจุของ C ออกแรงดันทั้งสองราง, ไดโอดปั๊ม, MOSFET สวิตช์ลำดับ</li>
+  </ul>
+  <div class="warn"><b>ESD & ความปลอดภัย:</b> ใช้สายรัดข้อมือ, หนีบกราวด์พาแนลก่อนวัด. ห้ามลัดช็อตโดยไม่ตั้งใจ — เกต TFT เสียถาวรได้</div>
+</section>
+
+<section class="card">
+  <h2>4) แปลงค่า Hex/Dec → แรงดัน (แนวทางใช้งานจริง)</h2>
+  <p>PMIC เก็บค่าในรีจิสเตอร์/EEPROM เป็น <b>โค้ด</b> (8–16 บิต, บางรุ่น Little‑Endian). สูตรทั่วไปเป็นเชิงเส้น:</p>
+  <p class="ok"><b>V ≈ a × Code + b</b> (a = สเกลโวลต์/LSB, b = ออฟเซ็ต). ค่าจริงขึ้นกับ IC/พาแนล/เฟิร์มแวร์</p>
+  <h3>ตัวอย่างอ้างอิงภาคสนาม (จากงานซ่อม)</h3>
+  <table>
+    <tr><th>สัญญาณ</th><th>ตัวอย่าง Hex</th><th>Dec</th><th>แรงดันวัดได้</th><th>โน้ต</th></tr>
+    <tr><td>VGH</td><td>0x72</td><td>114</td><td>≈ 23.1 V</td><td></td></tr>
+    <tr><td>VGH</td><td>0x7C</td><td>124</td><td>≈ 25.0 V</td><td></td></tr>
+    <tr><td>VGH</td><td>0x96</td><td>150</td><td>≈ 29.8 V</td><td>ใกล้ ~0.20 V/LSB</td></tr>
+    <tr><td>VGL</td><td>0x1E</td><td>30</td><td>≈ −6.5 V</td><td></td></tr>
+    <tr><td>VGL</td><td>0x2E</td><td>46</td><td>≈ −9.3 V</td><td></td></tr>
+    <tr><td>VGL</td><td>0x31</td><td>49</td><td>≈ −10.0 V</td><td></td></tr>
+    <tr><td>VGL</td><td>0x38</td><td>56</td><td>≈ −5.42 V</td><td>บางรุ่นไม่เชิงเส้น</td></tr>
+  </table>
+  <div class="warn"><b>สำคัญ:</b> VGL บางแพลตฟอร์ม <u>ไม่เป็นเส้นตรง</u> (piece‑wise/ตาราง LUT). ให้ทำตารางอ้างอิงจากค่าที่วัดจริงของรุ่นนั้น ๆ</div>
+  <h3>วิธีหา a,b อย่างเร็ว (แนะนำหน้างาน)</h3>
+  <ol>
+    <li>อ่าน <span class="kbd">Code1, Code2</span> จาก EEPROM/รีจิสเตอร์</li>
+    <li>วัดแรงดันจริง <span class="kbd">V1, V2</span></li>
+    <li>คำนวณ <code>a = (V2 − V1) / (Code2 − Code1)</code> และ <code>b = V1 − a×Code1</code></li>
+    <li>ตรวจซ้ำด้วยจุดที่ 3 เพื่อเช็คว่าเป็นเส้นตรงหรือไม่ (หากเพี้ยน ให้ทำ <b>piece‑wise</b>)</li>
+  </ol>
+  <p class="muted">หมายเหตุ: บางรุ่น VGH เป็น u16 Little‑Endian; VGL เป็น s8 (signed). ตรวจชนิดข้อมูลก่อนถอดรหัส</p>
+</section>
+
+<section class="card">
+  <h2>5) เวิร์กโฟลว์ปรับไฟหลังซ่อม/บอนด์ COF</h2>
+  <ol>
+    <li>ตรวจสายแพ/COF/Y‑driver ให้แน่ใจว่าไม่มีช็อต/ฉีก</li>
+    <li>บูตเครื่อง วัดรางไฟทั้งหมด: <span class="kbd">AVDD</span>, <span class="kbd">VGH</span>, <span class="kbd">VGL</span>, <span class="kbd">VCOM</span></li>
+    <li>ตั้งภาพทดสอบ (แนวทแยง/ตารางเทา/ขาวเต็มเฟรม)</li>
+    <li><b>ปรับ VGL</b> ทีละ 0.5–1.0 V (ทิศลบมากขึ้น) จนเส้นสว่างลดลง</li>
+    <li><b>ปรับ VGH</b> ลงทีละ 0.5–1.0 V เพื่อบาลานซ์ความสว่างซ้าย‑ขวา/บน‑ล่าง</li>
+    <li>ปรับละเอียด VCOM เพื่อเกลี่ย mid‑gray/ลดจุดสว่างมุม</li>
+    <li>ทดสอบ aging 20–30 นาที เช็คอุณหภูมิ/เสถียรภาพ</li>
+  </ol>
+  <div class="ok"><b>ทิป:</b> พาแนลเก่า ให้เริ่ม VGH ต่ำกว่าเดิม 2–3 V แล้วไล่ขึ้นทีละน้อย</div>
+</section>
+
+<section class="card">
+  <h2>6) ขั้นตอนอ่าน/เขียนด้วย RT809F (I2C)</h2>
+  <ol>
+    <li>เชื่อมต่อ RT809F ผ่าน USB (ไดรเวอร์ FTDI พร้อม)</li>
+    <li>ต่อ SDA/SCL/GND เข้าจุด I2C ของ PMIC/EEPROM (ตรวจระดับแรงดัน 3.3 V/5 V)</li>
+    <li>อ่านรีจิสเตอร์/EEPROM และบันทึกไฟล์ <span class="kbd">.bin</span> (เวอร์กช็อปนิยมสร้าง GUI ที่สร้าง .bin ให้ RT809F โหลด)</li>
+    <li>ค้นตำแหน่ง <span class="kbd">VGH</span>/<span class="kbd">VGL</span>: ใช้วิธีไล่เทียบค่า (Hex) ↔ แรงดันวัดจริง</li>
+    <li>แก้ค่าอย่างระมัดระวัง ทีละ 1–3 LSB แล้วแฟลชคืน ทดสอบทันที</li>
+  </ol>
+  <div class="warn"><b>สำรองข้อมูลเสมอ:</b> เก็บ <span class="kbd">original.bin</span> และ <span class="kbd">patched.bin</span> พร้อมบันทึกจุด offset/สูตรที่ใช้</div>
+</section>
+
+<section class="card">
+  <h2>7) เทคนิคหน้างาน & เคสจริง</h2>
+  <h3>7.1 Bypass Protection (เพื่อการวัด/ไล่เสีย)</h3>
+  <ul>
+    <li>ชอร์ต/จ่าย 3.3 V ให้สัญญาณที่ล็อกอินเอาต์เป็นบางกรณี เช่น <span class="kbd">FB331 ↔ FB332</span>, <span class="kbd">FB_TRDY1 ↔ FB_TRDY3</span>, <span class="kbd">DC_EN</span> (เฉพาะเพื่อไล่วงจรชั่วคราว)</li>
+    <li class="muted">จบงานแล้วคืนสภาพเดิมทุกจุด</li>
+  </ul>
+  <h3>7.2 เคส: เส้นแนวนอนสว่างหลังบอนด์</h3>
+  <ul>
+    <li>เพิ่มความเป็นลบของ <b>VGL</b> ทีละขั้น → เส้นจะค่อย ๆ จาง</li>
+    <li>ถ้าเกิดมุมมืด/ขอบเพี้ยน ให้ลด VGL กลับเล็กน้อยและปรับ VGH/ VCOM ช่วย</li>
+  </ul>
+  <h3>7.3 เคส: สว่างไม่เท่าซ้าย‑ขวา</h3>
+  <ul>
+    <li>ลด <b>VGH</b> ลงเพื่อดึงสว่างฝั่งเด่นให้ใกล้เคียง</li>
+    <li>ตรวจ COF ด้านสว่างกว่ามักมี leakage สูง</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>8) เมทริกซ์ไดแอกโนสติก (อาการ ↔ แนวทาง)</h2>
+  <table>
+    <tr><th>อาการ</th><th>มีแนวโน้มเกี่ยวกับ</th><th>แนวทางแก้</th></tr>
+    <tr><td>ภาพสว่างล้น/เส้นขาว</td><td>VGL ลบน้อยไป</td><td>เพิ่มลบ VGL (−0.5~−1 V/สเต็ป), ตรวจ ripple/ESR</td></tr>
+    <tr><td>ภาพมัว/มืด</td><td>VGH ต่ำไป</td><td>เพิ่ม VGH เล็กน้อย หรือปรับ VCOM</td></tr>
+    <tr><td>จอไม่ติด ไม่มีภาพ</td><td>VGH/VGL/AVDD ขาด</td><td>เช็ค PMIC enable, ลำดับจ่าย, ไดโอด/มอส/ฟิวส์</td></tr>
+    <tr><td>ริปเปิลสูง</td><td>C เสื่อม/ไดโอดปั๊ม</td><td>เปลี่ยน C ค่าถูกต้อง ESR ต่ำ, ตรวจไดโอด/สวิตช์</td></tr>
+    <tr><td>มุมเพี้ยน/ดำ</td><td>VCOM/สมดุลเกต</td><td>ปรับ VCOM ละเอียดหลังจบ VGH/VGL</td></tr>
+  </table>
+</section>
+
+<section class="card">
+  <h2>9) เคล็ดลับคุณภาพ & อายุการใช้งาน</h2>
+  <ul>
+    <li>ลด VGH ลง <b>2–3 V</b> สำหรับพาแนลอายุมาก</li>
+    <li>ไม่ดัน VGL ติดลบสุดโต่งเป็นเวลานาน – เสี่ยงเพี้ยนดำ/รีเทนชัน</li>
+    <li>ใช้ C ออกแรงดันที่ทนอุณหภูมิ/แรงดัน (เช่น 50–63 V ฝั่ง VGH), ESR ต่ำ</li>
+    <li>ตรวจความร้อน PMIC/COF ระหว่าง burn‑in 20–30 นาที</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>10) เชิงเฟิร์มแวร์: หาออฟเซ็ตใน .bin</h2>
+  <ol>
+    <li>ค้นหาแพทเทิร์น u16 LE ที่สัมพันธ์กับแรงดันวัดจริง (เช่น 114→23.1 V, 124→25.0 V, 150→29.8 V)</li>
+    <li>VGL มักเป็น s8/s16; ตรวจสัญญาณ <i>ติดลบ</i> และความเป็น <i>ไม่เชิงเส้น</i></li>
+    <li>ยืนยันด้วยการแก้ทีละ LSB แล้ววัดการเปลี่ยนแปลงบนบอร์ด</li>
+  </ol>
+  <p class="muted">เก็บบันทึก: offset, ชนิดข้อมูล, สูตร a,b หรือ LUT (CSV) ต่อรุ่นพาแนล</p>
+</section>
+
+<section class="card">
+  <h2>11) ตารางอ้างอิง (ภาคสนาม)</h2>
+  <div class="grid cols-2">
+    <div>
+      <h3>VGH (ตัวอย่าง)</h3>
+      <table>
+        <tr><th>Hex</th><th>Dec</th><th>VGH (V)</th></tr>
+        <tr><td>0x72</td><td>114</td><td>≈ 23.1</td></tr>
+        <tr><td>0x7C</td><td>124</td><td>≈ 25.0</td></tr>
+        <tr><td>0x81</td><td>129</td><td>≈ 25.7</td></tr>
+        <tr><td>0x90</td><td>144</td><td>≈ 28.9</td></tr>
+        <tr><td>0x96</td><td>150</td><td>≈ 29.8</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>VGL (ตัวอย่าง)</h3>
+      <table>
+        <tr><th>Hex</th><th>Dec</th><th>VGL (V)</th></tr>
+        <tr><td>0x1E</td><td>30</td><td>≈ −6.5</td></tr>
+        <tr><td>0x2E</td><td>46</td><td>≈ −9.3</td></tr>
+        <tr><td>0x31</td><td>49</td><td>≈ −10.0</td></tr>
+        <tr><td>0x38</td><td>56</td><td>≈ −5.42</td></tr>
+      </table>
+      <div class="warn">แนะนำทำ <b>LUT</b> ของรุ่นที่ซ่อม: วัดจริงทุก 2–4 โค้ด แล้วอินเตอร์โพเลตเป็นเส้นตรงช่วงสั้น ๆ</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>12) เช็คลิสต์ก่อนส่งมอบ</h2>
+  <ul>
+    <li>บันทึกค่า VGH/VGL/VCOM สุดท้าย</li>
+    <li>รูปถ่ายจุดซ่อม/COF/คาปาซิเตอร์ที่เปลี่ยน</li>
+    <li>log การเปลี่ยนรีจิสเตอร์/EEPROM (.bin เดิม/ใหม่)</li>
+    <li>ผล burn‑in pattern 20–30 นาที</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>ภาคผนวก: ศัพท์สำคัญ</h2>
+  <table>
+    <tr><th>คำ</th><th>คำอธิบาย</th></tr>
+    <tr><td>AVDD</td><td>แหล่งจ่ายอนาล็อกของซอร์สไดรเวอร์</td></tr>
+    <tr><td>VCOM</td><td>แรงดันอ้างอิงคอมมอนของพาแนล</td></tr>
+    <tr><td>COF</td><td>Chip‑On‑Film (ไดรเวอร์บนฟิล์ม)</td></tr>
+    <tr><td>LUT</td><td>ตารางแมปโค้ด→แรงดัน ใช้เมื่อไม่เชิงเส้น</td></tr>
+  </table>
+</section>
+
+<p class="footer">© Thai‑Dev — คู่มือเชิงลึก PMIC VGH/VGL (ฉบับหน้างาน) • เวอร์ชัน 2025‑09‑20</p>
+
+<!-- === Thai‑Dev Embedded Hex↔Voltage Calculator (VGH/VGL) === -->
+<section class="card" id="thai-dev-calculator">
+  <h2>เครื่องคำนวณ Hex ↔ แรงดันไฟ (VGH/VGL)</h2>
+  <p class="muted">คำนวณเชิงเส้น/คาลิเบรต 2 จุด และ LUT (piece‑wise) — ทำงานออฟไลน์ในหน้านี้ได้ทันที</p>
+  <div class="calc-container">
+
+  <section>
+    <h3>โหมดคำนวณหลัก</h3>
+    <div class="row cols-3">
+      <div>
+        <label for="signal">สัญญาณ</label>
+        <select id="signal">
+          <option value="VGH">VGH (Gate High, +)</option>
+          <option value="VGL">VGL (Gate Low, −)</option>
+        </select>
+      </div>
+      <div>
+        <label for="width">ขนาดข้อมูล</label>
+        <select id="width">
+          <option value="u8">8‑bit (u8)</option>
+          <option value="s8">8‑bit (s8)</option>
+          <option value="u16le" selected>16‑bit Little‑Endian (u16 LE)</option>
+          <option value="s16le">16‑bit Little‑Endian (s16 LE)</option>
+        </select>
+      </div>
+      <div>
+        <label for="mode">โหมดคำนวณ</label>
+        <select id="mode">
+          <option value="linear">เชิงเส้น: V = a×Code + b</option>
+          <option value="lut">LUT (piece‑wise + อินเตอร์โพเลต)</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <label for="panel-select">โปรไฟล์พาแนล (ตั้งค่า a,b อัตโนมัติ)</label>
+      <select id="panel-select">
+        <option value="">-- กำลังโหลดโปรไฟล์ --</option>
+      </select>
+    </div>
+
+    <div class="row cols-3" id="linearBox">
+      <div>
+        <label for="a">a (โวลต์/LSB)</label>
+        <input id="a" type="number" step="0.0001" value="0.2000">
+        <div class="hint">ตัวอย่างภาคสนาม VGH ~ 0.20 V/LSB</div>
+      </div>
+      <div>
+        <label for="b">b (ออฟเซ็ตโวลต์)</label>
+        <input id="b" type="number" step="0.001" value="0">
+        <div class="hint">ระบุออฟเซ็ต ถ้าจำเป็น (เช่น −0.2)</div>
+      </div>
+      <div>
+        <label for="vglPol">ทิศค่า VGL</label>
+        <select id="vglPol">
+          <option value="negative">VGL เป็นค่าลบ (ปกติ)</option>
+          <option value="positive">VGL เป็นค่าบวก (กรณีพิเศษ)</option>
+        </select>
+        <div class="hint">มีผลเฉพาะสัญญาณ VGL</div>
+      </div>
+    </div>
+
+    <div id="lutBox" style="display:none">
+      <label for="lut">LUT (วาง CSV: hex,dec(optional),volt[,notes])</label>
+      <textarea id="lut" placeholder="ตัวอย่าง:
+0x1E,30,-6.5
+0x2E,46,-9.3
+0x31,49,-10.0
+0x38,56,-5.42"></textarea>
+      <div class="hint">ระบบจะใช้คู่ (Code↔Volt) แล้วคำนวณด้วยการอินเตอร์โพเลตเส้นตรงระหว่างจุดที่ใกล้ที่สุด</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid cols-2">
+      <div>
+        <h3>คำนวณจาก Code → Voltage</h3>
+        <label for="codeIn">Code (Hex เช่น 0x96 หรือ Dec เช่น 150)</label>
+        <input id="codeIn" placeholder="0x96 หรือ 150">
+        <button class="btn primary" id="calcVoltBtn">คำนวณแรงดัน</button>
+        <div id="voltOut" class="out" role="status" aria-live="polite"></div>
+      </div>
+      <div>
+        <h3>ย้อนกลับจาก Voltage → Code</h3>
+        <label for="voltIn">Voltage (V)</label>
+        <input id="voltIn" type="number" step="0.01" placeholder="-10 หรือ 29.8">
+        <button class="btn primary" id="calcCodeBtn">คำนวณโค้ด</button>
+        <div id="codeOut" class="out" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="pill-container">
+      <span class="pill-label">Preset เร็ว:</span>
+      <button class="btn" id="presetVGHBtn">VGH (a≈0.20, b≈0)</button>
+      <button class="btn" id="presetVGLBtn">VGL linear เริ่มต้น</button>
+      <button class="btn" id="loadSampleLUTBtn">โหลดตัวอย่าง LUT VGL (ภาคสนาม)</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>คาลิเบรตหา a,b จาก 2 จุด (ภาคสนาม)</h3>
+    <div class="row cols-2">
+      <div>
+        <label>จุดที่ 1 — Code1 (Hex/Dec) & Voltage1 (V)</label>
+        <div class="row cols-2">
+          <input id="c1" placeholder="เช่น 0x72 หรือ 114">
+          <input id="v1" type="number" step="0.01" placeholder="เช่น 23.1">
+        </div>
+      </div>
+      <div>
+        <label>จุดที่ 2 — Code2 (Hex/Dec) & Voltage2 (V)</label>
+        <div class="row cols-2">
+          <input id="c2" placeholder="เช่น 0x96 หรือ 150">
+          <input id="v2" type="number" step="0.01" placeholder="เช่น 29.8">
+        </div>
+      </div>
+    </div>
+    <button class="btn primary" id="solveABBtn">คำนวณหา a,b</button>
+    <div id="abOut" class="out" role="status" aria-live="polite"></div>
+  </section>
+
+  <section>
+    <h3>หมายเหตุสำคัญ</h3>
+    <ul>
+      <li>หลายแพลตฟอร์ม <b>VGL ไม่เชิงเส้น</b> — แนะนำใช้ <b>LUT</b> แล้วค่อยอินเตอร์โพเลต</li>
+      <li>ชนิดข้อมูลสำคัญมาก: u8/s8/u16LE/s16LE และ signed/unsigned มีผลกับการถอดรหัส</li>
+      <li>ก่อนเขียนค่าใหม่ ให้สำรองเฟิร์มแวร์/EEPROM ทุกครั้ง</li>
+    </ul>
+  </section>
+
+  <footer class="calc-footer">
+    © Thai‑Dev — Hex↔Voltage Calculator v2025‑09‑20
+  </footer>
+</div>
+</section>
+
+<section class="card">
+  <h2>ข้อมูล API และเครื่องมือสำหรับนักพัฒนา</h2>
+  <p>แบ็กเอนด์ของโปรเจกต์นี้สร้างด้วย FastAPI ซึ่งจะสร้างเอกสาร API แบบโต้ตอบให้โดยอัตโนมัติ:</p>
+  <ul>
+    <li>เข้าถึง Swagger UI ได้ที่ <code>/docs</code> เพื่อทดลองเรียกใช้ endpoints โดยตรงจากเบราว์เซอร์</li>
+    <li>ไฟล์สคีมา OpenAPI 3 อยู่ที่ <code>/openapi.json</code></li>
+  </ul>
+  <p>นอกจากนี้ยังมี Postman collection (<code class="kbd">Thai-Dev-Voltages-API.postman_collection.json</code>) ในโปรเจกต์สำหรับใช้ทดสอบ API ได้อย่างสะดวก</p>
+</section>
+
+</main>
+<script type="module" src="index.tsx"></script>
+</body>
+</html>

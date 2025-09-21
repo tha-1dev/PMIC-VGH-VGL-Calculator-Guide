@@ -1,0 +1,50 @@
+{
+  "DEFAULT": {
+    "VGH": {
+      "bytes": 1,
+      "scale": 0.2,
+      "offset": 0.0,
+      "sign": 1
+    },
+    "VGL": {
+      "bytes": 1,
+      "scale": 0.2,
+      "offset": 0.0,
+      "sign": -1
+    },
+    "VCOM": {
+      "bytes": 2,
+      "scale": 0.01,
+      "offset": 0.0,
+      "sign": 1
+    }
+  },
+  "SAMSUNG_SW5084A": {
+    "VGH": {
+      "bytes": 1,
+      "scale": 0.1987,
+      "offset": 0.0,
+      "sign": 1
+    },
+    "VGL": {
+      "bytes": 1,
+      "scale": 0.27,
+      "offset": 0.0,
+      "sign": -1
+    }
+  },
+  "LG_GENERIC": {
+    "VGH": {
+      "bytes": 1,
+      "scale": 0.205,
+      "offset": 0.0,
+      "sign": 1
+    },
+    "VGL": {
+      "bytes": 1,
+      "scale": 0.25,
+      "offset": 0.0,
+      "sign": -1
+    }
+  }
+}
